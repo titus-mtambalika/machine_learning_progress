@@ -140,4 +140,12 @@ class GaussianNB:
 		return np.sum(density) + self.priors[c]
 	
 	def predict(self, X):
-		pass
+		predictions = np.array([None] * X.shape[0])
+		for i, sample in enumerate(X):
+			predicted_class, score = self.classes[0], 0
+			for c in self.classes:
+				density = self._log_likelihood(sample, c)
+				if density > score:
+					predicted_class, score = c, density
+			predictions[i] = predicted_class
+		return predictions
