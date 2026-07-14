@@ -1,5 +1,5 @@
 import numpy as np
-from math import e
+import math
 from collections import Counter
 
 def track_loss(model, X, y, epochs = 1000, i = 50, as_percentage = False, learning_rate = 0.01):
@@ -8,11 +8,11 @@ def track_loss(model, X, y, epochs = 1000, i = 50, as_percentage = False, learni
 	if not as_percentage:
 		for i in range(epochs // i):
 			model.fit(X, y, epochs = i, learning_rate = learning_rate)
-			loss = np.sum((y - model.predict(X)) ** 2) / X.shape[0]
+			loss = np.sum((y - model.predict(X)) ** 2) / y.shape[0]
 			loss_report = np.append(loss_report, loss)
 	else:
 		for i in range(epochs // i):
-			model.fit(X, y, epochs = i, llearning_rate = learning_rate)
+			model.fit(X, y, epochs = i, learning_rate = learning_rate)
 			loss = np.mean(((y - model.predict(X)) ** 2) / y) * 100
 			loss_report = np.append(loss_report, loss)
 	return loss_report
@@ -22,7 +22,7 @@ def regularize(X, axis = 0):
 	return reg / np.mean(reg, axis = 0)
 
 def sigmoid(z):
-	return 1 / (1 + e ** -z)
+	return 1 / (1 + math.e ** -z)
 	
 def asigmoid(z):
 	return -1 * np.log((1 / z) - 1)
@@ -102,11 +102,42 @@ class KNN:
 		votes = nearest_neighbours[:K]
 		return np.mean(votes, axis = 1)
 		
-	def predic(self, samples, K = 7):
+	def predict(self, samples, K = 7):
 		return [self.predict_one(sample) for sample in samples]
 		
 class GaussianNB:
-	def __init__(self, epsilon = 1e-9):
-		self.classes = None
+	def __init__(self, epsilon=1e-9):
 		self.epsilon = epsilon
-		self.mean
+		self.classes = None
+		self.priors = None	  # dict: class -> prior
+		self.means = None	   # dict: class -> mean vector
+		self.variances = None   # dict: class -> variance vector
+		#cache for faster predictions
+		self.bases = None
+	
+	def fit(self, X, y):
+		self.classes = np.unique(y)
+		self.priors = {}
+		self.means = {}
+		self.variances = {}
+		self.bases = {}
+		
+
+		for c in self.classes:
+			#flatten mask to avoid index error
+			X_c = X[(y == c).flatten()]
+			self.priors[c] = len(X_c) / len(X)
+			self.means[c] = np.mean(X_c, axis=0)
+			self.variances[c] = np.var(X_c, axis=0) + self.epsilon
+			#cache bases for faster _log_likelihood
+			self.bases[c] = 1 / (2 * math.pi * self.variances[c])
+		
+	
+	def _log_likelihood(self, x, c):
+		# Compute log P(x_j | y=c) for all j
+		density = self.bases[c] ** -((x - self.means[c]) ** 2 / (2 * self.variances[c]))
+		# Then sum them
+		return np.sum(density) + self.priors[c]
+	
+	def predict(self, X):
+		pass
