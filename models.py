@@ -135,7 +135,7 @@ class GaussianNB:
 	
 	def _log_likelihood(self, x, c):
 		# Compute log P(x_j | y=c) for all j
-		density = self.bases[c] ** -((x - self.means[c]) ** 2 / (2 * self.variances[c]))
+		density = self.bases[c] * math.e ** -((x - self.means[c]) ** 2 / (2 * self.variances[c]))
 		# Then sum them
 		return np.sum(density) + self.priors[c]
 	
