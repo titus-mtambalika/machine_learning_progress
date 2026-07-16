@@ -100,7 +100,7 @@ class KNN:
 		distances = np.sum((sample - self.X) ** 2, axis = 1)
 		nearest_neighbours = self.y[np.argsort(distances)]
 		votes = nearest_neighbours[:K]
-		return np.mean(votes, axis = 1)
+		return np.mean(votes)
 		
 	def predict(self, samples, K = 7):
 		return [self.predict_one(sample) for sample in samples]
@@ -109,43 +109,52 @@ class GaussianNB:
 	def __init__(self, epsilon=1e-9):
 		self.epsilon = epsilon
 		self.classes = None
-		self.priors = None	  # dict: class -> prior
-		self.means = None	   # dict: class -> mean vector
-		self.variances = None   # dict: class -> variance vector
-		#cache for faster predictions
-		self.bases = None
+		self.priors = None
+		self.means = None
+		self.variances = None
+		self._log_priors = None  # cache
 	
 	def fit(self, X, y):
+		# Ensure y is 1D
+		y = y.flatten() if y.ndim > 1 else y
+		
 		self.classes = np.unique(y)
 		self.priors = {}
 		self.means = {}
 		self.variances = {}
-		self.bases = {}
 		
-
 		for c in self.classes:
-			#flatten mask to avoid index error
-			X_c = X[(y == c).flatten()]
+			X_c = X[y == c]
 			self.priors[c] = len(X_c) / len(X)
 			self.means[c] = np.mean(X_c, axis=0)
 			self.variances[c] = np.var(X_c, axis=0) + self.epsilon
-			#cache bases for faster _log_likelihood
-			self.bases[c] = 1 / (2 * math.pi * self.variances[c])
 		
+		# Cache for faster predictions
+		self._log_priors = {c: np.log(self.priors[c]) for c in self.classes}
+		self._log_variances = {c: np.log(self.variances[c]) for c in self.classes}
+		self._d = X.shape[1]  # number of features
 	
-	def _log_likelihood(self, x, c):
-		# Compute log P(x_j | y=c) for all j
-		density = self.bases[c] * math.e ** -((x - self.means[c]) ** 2 / (2 * self.variances[c]))
-		# Then sum them
-		return np.sum(density) + self.priors[c]
+	def _log_likelihood_batch(self, X, c):
+		"""Returns log likelihood for all samples in X for class c"""
+		# Shape: (m,)
+		log_density = -0.5 * self._d * np.log(2 * np.pi) - \
+					 0.5 * np.sum(self._log_variances[c]) - \
+					 0.5 * np.sum((X - self.means[c])**2 / self.variances[c], axis=1)
+		return self._log_priors[c] + log_density
+	
+	def predict_proba(self, X):
+		"""Returns class probabilities for all samples"""
+		# Shape: (m, C)
+		scores = np.column_stack([
+			self._log_likelihood_batch(X, c) 
+			for c in self.classes
+		])
+		
+		# Numerically stable softmax
+		scores_shifted = scores - np.max(scores, axis=1, keepdims=True)
+		return np.exp(scores_shifted) / np.sum(np.exp(scores_shifted), axis=1, keepdims=True)
 	
 	def predict(self, X):
-		predictions = np.array([None] * X.shape[0])
-		for i, sample in enumerate(X):
-			predicted_class, score = self.classes[0], 0
-			for c in self.classes:
-				density = self._log_likelihood(sample, c)
-				if density > score:
-					predicted_class, score = c, density
-			predictions[i] = predicted_class
-		return predictions
+		"""Returns class predictions"""
+		proba = self.predict_proba(X)
+		return self.classes[np.argmax(proba, axis=1)]
