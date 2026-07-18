@@ -42,14 +42,13 @@ class Lin_reg:
 			
 		for epoch in range(epochs):
 			prediction = X @ self.weights + self.bias
-			loss = np.sum((prediction - y) ** 2)
 			
 			self.weights -= (learning_rate / n_samples) * (X.T @ (prediction - y))
 			self.bias -= learning_rate * np.mean(prediction - y)
 			
 	def predict(self, X):
 		return X @ self.weights + self.bias
-		
+
 class Log_reg:
 	def __init__(self):
 		self.weights = None
@@ -79,8 +78,7 @@ class Log_reg:
 	def predict(self, X, threshold=0.5):
 		proba = self.predict_proba(X)
 		return (proba >= threshold).astype(int)
-	
-	
+
 class KNN:
 	def __init__(self, X, y):
 		self.X = X 
@@ -104,7 +102,7 @@ class KNN:
 		
 	def predict(self, samples, K = 7):
 		return [self.predict_one(sample) for sample in samples]
-		
+
 class GaussianNB:
 	def __init__(self, epsilon=1e-9):
 		self.epsilon = epsilon
