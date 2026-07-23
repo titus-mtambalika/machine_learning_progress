@@ -12,7 +12,7 @@ def track_loss(model,
                relative = False,):
 	loss_report = np.array([])
 	# epochs for total iterations i for epochs per iterations
-	for i in range(epochs // i):
+	for _ in range(epochs // i):
 		model.fit(X, y, epochs = i, learning_rate = learning_rate)
 		loss = np.sum((y - model.predict(X)) ** 2) / y.shape[0]
 		loss_report = np.append(loss_report, loss)
@@ -26,7 +26,7 @@ def track_loss(model,
 
 def normalize(X, axis = 0):
 	reg = X - np.mean(X, axis = axis)
-	return reg / np.var(reg, axis = axis)
+	return reg / np.std(reg, axis = axis)
 
 def sigmoid(z):
 	return 1 / (1 + math.e ** -z)
