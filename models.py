@@ -17,9 +17,9 @@ def track_loss(model, X, y, epochs = 1000, i = 50, as_percentage = False, learni
 			loss_report = np.append(loss_report, loss)
 	return loss_report
 
-def regularize(X, axis = 0):
-	reg = X - np.min(X, axis = axis)
-	return reg / np.mean(reg, axis = 0)
+def normalize(X, axis = 0):
+	reg = X - np.mean(X, axis = axis)
+	return reg / np.var(reg, axis = 0)
 
 def sigmoid(z):
 	return 1 / (1 + math.e ** -z)
@@ -156,3 +156,12 @@ class GaussianNB:
 		"""Returns class predictions"""
 		proba = self.predict_proba(X)
 		return self.classes[np.argmax(proba, axis=1)]
+
+class DecisionTree:
+	def __init__(self, max_depth = 10, min_sample_split = 2):
+		self.max_depth = max_depth
+		self.min_sample_split = min_sample_split
+		self.tree = None
+	
+	def fit(X, y):
+		pass
