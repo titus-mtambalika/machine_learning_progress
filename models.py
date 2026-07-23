@@ -2,19 +2,26 @@ import numpy as np
 import math
 from collections import Counter
 
-def track_loss(model, X, y, epochs = 1000, i = 50, as_percentage = False, learning_rate = 0.01):
+def track_loss(model,
+               X, 
+               y, 
+               epochs = 1000,
+               i = 50, 
+               learning_rate = 0.01,
+               gradient = False,
+               relative = False,):
 	loss_report = np.array([])
 	# epochs for total iterations i for epochs per iterations
-	if not as_percentage:
-		for i in range(epochs // i):
-			model.fit(X, y, epochs = i, learning_rate = learning_rate)
-			loss = np.sum((y - model.predict(X)) ** 2) / y.shape[0]
-			loss_report = np.append(loss_report, loss)
-	else:
-		for i in range(epochs // i):
-			model.fit(X, y, epochs = i, learning_rate = learning_rate)
-			loss = np.mean(((y - model.predict(X)) ** 2) / y) * 100
-			loss_report = np.append(loss_report, loss)
+	for i in range(epochs // i):
+		model.fit(X, y, epochs = i, learning_rate = learning_rate)
+		loss = np.sum((y - model.predict(X)) ** 2) / y.shape[0]
+		loss_report = np.append(loss_report, loss)
+	# to track approximate gradient of loss curve
+	if gradient:
+		loss_report = loss_report[1:] - loss_report[:-1]
+	# make initial loss 1 to compare gradient change
+	if relative:
+		loss_report = loss_report / loss_report[0]
 	return loss_report, np.linspace(0, epochs, i)
 
 def normalize(X, axis = 0):
