@@ -15,11 +15,11 @@ def track_loss(model, X, y, epochs = 1000, i = 50, as_percentage = False, learni
 			model.fit(X, y, epochs = i, learning_rate = learning_rate)
 			loss = np.mean(((y - model.predict(X)) ** 2) / y) * 100
 			loss_report = np.append(loss_report, loss)
-	return loss_report
+	return loss_report, np.linspace(0, epochs, i)
 
 def normalize(X, axis = 0):
 	reg = X - np.mean(X, axis = axis)
-	return reg / np.var(reg, axis = 0)
+	return reg / np.var(reg, axis = axis)
 
 def sigmoid(z):
 	return 1 / (1 + math.e ** -z)
